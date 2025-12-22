@@ -1,98 +1,140 @@
-### Fully-automated-computing-ECD-workflow
+# Fully Automated ECD Workflow for Natural Products
 
-Automated workflow for computing ECD spectra with ORCA. Features an end-to-end pipeline from conformational search to Boltzmann-weighted spectral generation and comparison with experimental data. Includes tools for parallel HPC job management and automated data processing. Designed to save time and reduce errors for computational chemists.
+![ORCA](https://img.shields.io/badge/Quantum_Chem-ORCA_6.1.0-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.x-green.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-## 🚀 Features
+**An end-to-end automated pipeline for stereochemical determination of flexible natural products (e.g., Lignans) using ORCA and Python.**
 
-* **End-to-End Automation**: Handles the complete lifecycle from 3D conformer search (GOAT/XTB) to final ECD spectrum generation.
-* **HPC Integration**: Optimized `SLURM` submission script (`orca.sh`) that manages parallel execution of geometry optimizations and TDDFT calculations for multiple conformers.
-* **Smart Post-Processing**: Python-based processor (`ecd_processor.py`) that:
-* Calculates Boltzmann weights based on Gibbs free energy.
-* Applies Gaussian broadening to discrete transitions.
-* Performs UV-shift correction and intensity scaling.
-* Supports automatic spectrum inversion for enantiomer determination.
+## 📖 Overview
+
+This repository contains the workflow described in our paper: *[Insert Paper Title Here]*.
+
+Assigning the absolute configuration of flexible molecules (like lignans) is a challenge due to multiple rotatable bonds. This workflow automates the entire process on **SLURM-managed HPC clusters**, significantly reducing the "wall-clock time" from days to hours (approx. 5-10h for typical lignans).
+
+### Key Features
+* **Zero-Intervention:** From 3D conformer search (GOAT/XTB) to TDDFT-ECD calculation in one go.
+* **HPC Optimized:** Handles parallel job submission and resource management automatically.
+* **Dual-Language Support:** The main script (`orca_double_language.sh`) contains comments in both English and Chinese for easier modification.
+* **Automated Visualization:** The Python processor generates publication-ready plots comparing calculated vs. experimental spectra (including Boltzmann weighting and UV-shift correction).
+
+---
+
+## 📂 File Structure
+
+* `orca_double_language.sh`: The master Bash script for SLURM. Controls the entire calculation logic.
+* `ecd_processor.py`: Post-processing script for Boltzmann averaging, data normalization, and plotting.
+* `split_xyz.py`: (Helper) Splits the ensemble XYZ file into individual conformer files.
+* `exp_data.csv`: (User Input) Your experimental ECD data for comparison.
+
+---
+
+## ⚙️ Configuration (Crucial Step)
+
+**Before running the workflow, you MUST modify `orca_double_language.sh` to match your cluster environment.**
+
+Open `orca_double_language.sh` and check the following sections:
+
+### 1. SLURM Header (Lines 15-25)
+Modify the `#SBATCH` directives to fit your cluster's policy:
+```bash
+#SBATCH -p cn-short           # <--- Change to your partition name
+#SBATCH -A your_account_name  # <--- Change to your billing account
+#SBATCH --qos=your_qos_name   # <--- Change (or remove) based on your QoS
+
+```
+
+### 2. Software Paths (Lines 40-50)
+
+Set the absolute paths to your ORCA and OpenMPI installations:
+
+```bash
+# Example:
+export ORCA_DIR=/path/to/your/software/orca-6.1.0  # <--- MODIFY THIS
+export MPI_HOME=/path/to/your/software/openmpi     # <--- MODIFY THIS
+
+```
+
+### 3. Working Directory (Line 60)
+
+The script attempts to `cd` into a specific directory. Update this to your project folder or remove the line to run in the current submission directory:
+
+```bash
+cd /your/project/working/directory  # <--- MODIFY or DELETE THIS
+
+```
+
+---
+
+## 🚀 Usage
+
+### Step 1: Prepare Input Files
+
+1. Place your initial 3D structure (e.g., `structure.xyz`) in the folder.
+2. (Optional) Place your experimental data in `exp_data.csv` (Columns: Wavelength, Intensity).
+
+### Step 2: Submit Job
+
+Run the Bash script via SLURM:
+
+```bash
+sbatch orca_double_language.sh
+
+```
+
+*The script will automatically perform conformational search, geometry optimization, frequency check, and ECD calculation.*
+
+### Step 3: Post-Processing
+
+Once the job finishes, use the Python script to generate the final comparison plot:
+
+```bash
+python3 ecd_processor.py
+
+```
+
+* **Input:** Reads `opt_conf/boltzmann_results.txt` and `exp_data.csv`.
+* **Output:** Generates `comparison_plot.png` and `calculated_spectrum.csv`.
+
+---
+
+## 📊 Output Examples
+
+The workflow produces organized outputs:
+
+1. **`opt_conf/`**: Contains optimized geometries (`.xyz`) and Boltzmann distribution data (`boltzmann_results.txt`).
+2. **`ECD_opt/`**: Contains raw ORCA output files for every conformer.
+3. **Visualizations**:
+* **Boltzmann Averaged Spectrum**: Adjusted for conformer population.
+* **Comparison Plot**: Overlays Experimental (Black) vs. Calculated (Red/Blue for enantiomers).
 
 
-* **Publication-Ready Visualization**: Automatically generates high-quality comparison plots (Calculated vs. Experimental) using `matplotlib`.
+
+---
 
 ## 🛠️ Requirements
 
-### Software
-
-* **ORCA 6.1.0** (or later)
-* **OpenMPI** (compatible with your ORCA version)
+* **Linux HPC Cluster** with SLURM workload manager.
+* **ORCA 6.1.0** (Required for the specific GOAT/XTB implementation used here).
 * **Python 3.x**
+* `numpy`
+* `matplotlib`
 
-### Python Dependencies
 
-Install the required libraries via pip:
 
 ```bash
 pip install numpy matplotlib
 
 ```
 
-## 📂 File Structure
-
-* `orca.sh`: Main Bash script for SLURM workload manager. Handles environment setup, conformational search, geometry optimization, and ECD calculation steps.
-* `ecd_processor.py`: Post-processing tool for Boltzmann weighting, spectral fitting, and plotting.
-* `exp_data.csv`: (User provided) Experimental ECD data file containing two columns: Wavelength (nm) and Intensity (mdeg or Δε).
-
-## 📖 Usage
-
-### Step 1: HPC Calculation (`orca.sh`)
-
-1. Modify the header of `orca.sh` to match your cluster's partition, account, and resource limits.
-2. **Important:** Update the `ORCA_DIR` and `MPI_HOME` paths in the script to point to your local installation:
-```bash
-export ORCA_DIR=/path/to/your/orca
-export MPI_HOME=/path/to/your/openmpi
-
-```
-
-
-3. Submit the job:
-```bash
-sbatch orca.sh
-
-```
-
-
-*The script will automatically perform conformational search, optimize geometries for all conformers, and calculate ECD/UV spectra.*
-
-### Step 2: Post-Processing (`ecd_processor.py`)
-
-Once the calculations are complete, use the Python script to generate the final spectra.
-
-1. Prepare your experimental data in `exp_data.csv`.
-2. Run the processor:
-```bash
-python3 ecd_processor.py
-
-```
-
-
-3. **Parameter Tuning:** You can adjust the spectral parameters inside the script or (future version) via command line arguments:
-* `sigma`: Standard deviation for Gaussian broadening (default: 0.3 eV).
-* `shift`: UV-shift correction in nm (default: 0).
-* `scale_factor`: Scaling factor for intensity matching.
-
-
-
-## 📊 Outputs
-
-The workflow generates the following key files:
-
-* **`boltzmann_results.txt`**: Detailed list of conformer energies and their calculated Boltzmann populations.
-* **`calculated_spectrum.csv`**: Raw and scaled calculated ECD data points.
-* **`comparison_plot.png`**: A visual overlay of the experimental spectrum against the Boltzmann-averaged calculated spectrum (including inverted configuration for comparison).
-
-## 📝 Citation
+## 📄 Citation
 
 If you use this workflow in your research, please cite:
 
-> [Your Name], et al. "Title of your Manuscript". *Journal Name*, Year, Volume, Pages. (DOI)
+> [Authors]. "[Title of your Manuscript]". *[Journal Name]*, **Year**, *Vol*, Page. DOI: [Link]
 
-## 📄 License
+## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the `LICENSE` file for details.
+
+```
