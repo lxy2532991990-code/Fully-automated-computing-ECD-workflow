@@ -169,7 +169,7 @@ sbatch orca.sh
 
 ### Step 3: Post-Processing
 
-After the calculation is complete, transfer the `opt_conf` and `ECD_opt` folders to your local computer. Then, place the `ecd_processor.py` and the `exp_data.csv` in the same directory. Finally, modify the `def main()` parameters (Lines 590-603) and run the Python script to obtain the final comparison plot.
+After the calculation is complete, transfer the `opt_conf` and `ECD_opt` folders to your local computer. Then, place the `ecd_processor.py` and the `exp_data.csv` in the same directory. Finally, modify the `def main()` parameters (Lines 716-733) and run the Python script to obtain the final comparison plot.
 
 ```bash
 python3 ecd_processor.py
