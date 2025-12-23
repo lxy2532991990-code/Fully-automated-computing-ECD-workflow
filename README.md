@@ -176,7 +176,7 @@ python3 ecd_processor.py
 
 ```
 
-* **Input:** Reads `opt_conf/boltzmann_results.txt`, `ECD_opt/ECD-conf-*/` and `exp_data.csv`.
+* **Input:** Reads `opt_conf/boltzmann_results.txt`, `ECD_opt/ECD-conf-*.out` and `exp_data.csv`.
 * **Output:** Generates `comparison_plot.png` and `calculated_spectrum.csv`.
 
 ---
